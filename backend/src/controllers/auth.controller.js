@@ -24,7 +24,12 @@ export async function registerController(req, res, next) {
        await isUserExists.deleteOne();
 }
 
-  const user = await userModel.create({ username, email, password });
+  const user = (await userModel.create({ 
+    username, 
+    email, 
+    password, 
+    lastVerificationEmailSentAt: new Date(),
+  }));
 
   const emailVerificationToken = jwt.sign(
     {
@@ -37,7 +42,7 @@ export async function registerController(req, res, next) {
     },
   );
 
-  const verificationLink = `http://localhost:3000/api/auth/verify-email?token=${emailVerificationToken}`;
+  const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${emailVerificationToken}`;
 
   await senEmail({
     to: email,
@@ -63,7 +68,7 @@ export async function registerController(req, res, next) {
 }
 
 
-
+//verification email
 export async function verifyEmailController(req, res) {
   const { token } = req.query;
 
@@ -82,7 +87,12 @@ export async function verifyEmailController(req, res) {
   }
 
   if (user.verified) {
-  return res.send("<h1>✅ Email already verified.</h1>");
+  return res.send(
+    `<h1>✅ Email already verified.</h1>
+     <a href="http://localhost:5173/login">
+       Go to Login
+     </a>
+    `);
 }
 
   user.verified = true;
@@ -92,6 +102,9 @@ export async function verifyEmailController(req, res) {
   return res.send(`
       <h1>✅ Email Verified Successfully</h1>
       <p>Your email has been verified.</p>
+      <a href="http://localhost:5173/login">
+        Go to Login
+      </a>
   `);
   }
    catch (error) {
@@ -104,19 +117,90 @@ export async function verifyEmailController(req, res) {
 }
 
 
-export async function loginController(req,res) {
-    const{email,password}=req.body;
+
+//resend verification email
+export async function resendVerificationEmail(req,res) {
+    const {email} = req.body;
 
     const user = await userModel.findOne({email});
 
     if(!user){
-        return res.status(400).json({
-            message:"invalid email or password",
-            success:false,
-            err:"user not found"
-        })
+      return res.status(404).json({
+        message:"user not found",
+        success:false
+      })
     }
 
+    if(user.verified){
+      return res.status(400).json({
+        success:false,
+        message:"email already verified"
+      })
+    }
+
+    if (
+    user.lastVerificationEmailSentAt &&
+    Date.now() - user.lastVerificationEmailSentAt.getTime() < 60 * 1000
+  ) {
+    return res.status(429).json({
+      success: false,
+      message: "Please wait 1 minute before requesting another verification email.",
+    });
+  }
+
+  const emailVerificationToken = jwt.sign(
+    {
+      id: user._id,
+      email: user.email,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "1d",
+    }
+  );
+
+  const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${emailVerificationToken}`;
+
+  await senEmail({
+    to: user.email,
+    subject: "Verify Your Email",
+    html: `
+      <p>Hi ${user.username},</p>
+      <p>Thank you for registering at <strong>Perplexity</strong>.</p>
+      <p>Please click the link below to verify your email:</p>
+
+      <a href="${verificationLink}">
+        Verify Email
+      </a>
+
+      <p>If you did not request this email, you can safely ignore it.</p>
+    `,
+  });
+
+  user.lastVerificationEmailSentAt = new Date();
+  await user.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Verification email sent successfully.",
+  });
+
+
+}
+
+export async function loginController(req,res) {
+  const{email,password}=req.body;
+  
+  const user = await userModel.findOne({email}).select("+password");
+  
+  if(!user){
+        return res.status(400).json({
+          message:"invalid email or password",
+          success:false,
+          err:"user not found"
+        })
+    }
+    
     const isMatchedPassword = await user.comparePassword(password);
 
     if(!isMatchedPassword){
@@ -153,3 +237,25 @@ export async function loginController(req,res) {
     })
 
 }
+
+
+export async function getMeController(req,res) {
+    const userID = req.user.id;
+
+    const user = await userModel.findById(userID);
+
+    if(!user){
+        return res.status(401).json({
+            message:"user not found",
+            success:false,
+            err:"user not found"
+        })
+    }
+
+    return res.status(200).json({
+        message:"user data fetched successfully",
+        success:true,
+        user
+    })
+}
+
