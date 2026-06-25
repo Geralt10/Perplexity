@@ -1,5 +1,5 @@
 import express from 'express'
-import { getMeController, loginController, registerController, resendVerificationEmail, verifyEmailController } from '../controllers/auth.controller.js';
+import { forgotPasswordController, getMeController, loginController, logoutController, refreshTokenController, registerController, resendVerificationEmail, resetPasswordController, verifyEmailController } from '../controllers/auth.controller.js';
 import { loginValidator, registerValidator } from '../validators/auth.validation.js';
 import identifyUser from '../middlewares/auth.middleware.js';
 
@@ -14,6 +14,14 @@ authRouter.post("/login",loginValidator,loginController);
 
 authRouter.get("/get-me",identifyUser,getMeController);
 
-authRouter.post("/resend-verification-email",resendVerificationEmail)
+authRouter.post("/resend-verification-email",resendVerificationEmail);
+
+authRouter.post("/refresh-token",refreshTokenController);
+
+authRouter.post("/logout",logoutController);
+
+authRouter.post("/forgot-password",forgotPasswordController);
+
+authRouter.post("/reset-password",resetPasswordController)
 
 export default authRouter;

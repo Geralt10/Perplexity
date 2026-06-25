@@ -3,8 +3,10 @@
 import jwt from "jsonwebtoken";
 import userModel from "../models/user.model.js";
 import { senEmail } from "../services/mail.service.js";
+import redisClient from "../config/cache.js";
 
 
+//register
 export async function registerController(req, res, next) {
   const { username, email, password } = req.body;
 
@@ -188,57 +190,89 @@ export async function resendVerificationEmail(req,res) {
 
 }
 
-export async function loginController(req,res) {
-  const{email,password}=req.body;
-  
-  const user = await userModel.findOne({email}).select("+password");
-  
-  if(!user){
-        return res.status(400).json({
-          message:"invalid email or password",
-          success:false,
-          err:"user not found"
-        })
+
+//login
+export async function loginController(req, res) {
+  const { email, password } = req.body;
+
+  const user = await userModel.findOne({ email }).select("+password");
+
+  if (!user) {
+    return res.status(400).json({
+      message: "invalid email or password",
+      success: false,
+      err: "user not found",
+    });
+  }
+
+  const isMatchedPassword = await user.comparePassword(password);
+
+  if (!isMatchedPassword) {
+    return res.status(400).json({
+      message: "invalid email or password",
+      success: false,
+      err: "invalid password",
+    });
+  }
+
+  if (!user.verified) {
+    return res.status(400).json({
+      message: "please verify your email",
+      success: false,
+      err: "email not verified",
+    });
+  }
+
+  const accessToken = jwt.sign(
+    {
+      id: user._id,
+      email: user.email,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "15m",
     }
-    
-    const isMatchedPassword = await user.comparePassword(password);
+  );
 
-    if(!isMatchedPassword){
-        return res.status(400).json({
-            message:"invalid email or password",
-            success:false,
-            err:"user not found"
-        })
+  const refreshToken = jwt.sign(
+    {
+      id: user._id,
+      email: user.email,
+    },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: "7d",
     }
+  );
 
-    if(!user.verified){
-        return res.status(400).json({
-            message:"please verify your email",
-            success:false,
-            err:"email not verified"
-        })
-    }
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: false, // production me true kar dena
+    sameSite: "lax",
+    maxAge: 15 * 60 * 1000,
+  });
 
-    const token = jwt.sign({
-        id:user._id,
-        email:user.email
-    },process.env.JWT_SECRET,{expiresIn:"7d"});
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: false, // production me true kar dena
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 
-    res.cookie("token",token);
-
-    return res.status(200).json({
-        message:"loggedIn successfully",
-        success:true,
-        user:{
-            id:user._id,
-            username:user.username,
-            email:user.email
-        }
-    })
-
+  return res.status(200).json({
+    message: "loggedIn successfully",
+    success: true,
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+    },
+  });
 }
 
 
+
+// get user detail
 export async function getMeController(req,res) {
     const userID = req.user.id;
 
@@ -259,3 +293,176 @@ export async function getMeController(req,res) {
     })
 }
 
+
+
+// refresh
+export async function refreshTokenController(req,res){
+
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) {
+  return res.status(401).json({
+    success: false,
+    message: "No refresh token provided",
+  });
+}
+
+  let decoded;
+  
+  try {
+     decoded = jwt.verify(refreshToken,process.env.REFRESH_TOKEN_SECRET);
+  } catch (error) {
+    return res.status(401).json({
+      message:"invalid  token",
+      success:false,
+      err:error.message
+    })
+  }
+
+  const user = await userModel.findById(decoded.id);
+
+  if(!user){
+    return res.status(401).json({
+      message:"invalid or expired token",
+      success:false,
+      err:"user not found"
+    })
+  }
+
+  const accessToken = jwt.sign({
+    id:user._id,
+    email:user.email
+  },process.env.JWT_SECRET,{expiresIn:'15m'});
+
+  res.cookie("accessToken",accessToken,{
+    httpOnly: true,
+    secure: false, // production me true kar dena
+    sameSite: "lax",
+    maxAge: 15 * 60 * 1000,
+  })
+
+  return res.status(200).json({
+    message:"token refreshed",
+    success:true
+  })
+
+
+
+}
+
+
+//logout
+export async function logoutController(req,res){
+  const accessToken = req.cookies.accessToken;
+
+  if (accessToken) {
+    await redisClient.set(
+      `blacklist:${accessToken}`,
+      "true",
+      {
+        EX: 15 * 60, // 15 minutes
+      }
+    );
+  }
+
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+
+  return res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+  });
+}
+
+
+//forgot password
+export async function forgotPasswordController(req, res) {
+  const { email } = req.body;
+
+  const user = await userModel.findOne({ email });
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  const resetToken = jwt.sign(
+    {
+      id: user._id,
+      email: user.email,
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "15m",
+    }
+  );
+
+  const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
+
+  await senEmail({
+    to: user.email,
+    subject: "Reset Your Password",
+    html: `
+      <p>Hi ${user.username},</p>
+
+      <p>Click the link below to reset your password:</p>
+
+      <a href="${resetLink}">
+        Reset Password
+      </a>
+
+      <p>If you did not request this, you can safely ignore this email.</p>
+    `,
+  });
+
+  return res.status(200).json({
+    success: true,
+    message: "Password reset email sent successfully.",
+  });
+}
+
+
+//reset password
+export async function resetPasswordController(req, res) {
+  const { token } = req.query;
+  const { password } = req.body;
+
+  if (!token || !password) {
+    return res.status(400).json({
+      success: false,
+      message: "Token and password are required",
+    });
+  }
+
+  let decoded;
+
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid or expired token",
+      err: error.message,
+    });
+  }
+
+  const user = await userModel.findById(decoded.id).select("+password");
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: "User not found",
+    });
+  }
+
+  user.password = password;
+
+  await user.save();
+
+  return res.status(200).json({
+    success: true,
+    message: "Password reset successfully",
+  });
+}

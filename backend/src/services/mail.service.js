@@ -28,4 +28,6 @@ transpoter.verify()
     
     const details = await transpoter.sendMail(mailOptions);
     console.log("email sent:", details)
+
+    return "email has sent successfully to "+to;
  }
