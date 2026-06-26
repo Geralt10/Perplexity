@@ -289,7 +289,14 @@ export async function getMeController(req,res) {
     return res.status(200).json({
         message:"user data fetched successfully",
         success:true,
-        user
+        user: {
+                id: user._id,
+                username: user.username,
+                email: user.email,
+                verified: user.verified,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+              }
     })
 }
 
@@ -458,7 +465,7 @@ export async function resetPasswordController(req, res) {
   let decoded;
 
   try {
-    decoded = jwt.verify(token, process.env.JWT_SECRET);
+    decoded = jwt.verify(token, process.env.RESET_PASSWORD_SECRET);
   } catch (error) {
     return res.status(400).json({
       success: false,

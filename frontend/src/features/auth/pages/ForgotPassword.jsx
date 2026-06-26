@@ -1,19 +1,18 @@
 
 import { useState } from "react";
 import { Link } from "react-router";
+import { useSelector } from "react-redux";
+import { useAuth } from "../hooks/useAuth";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
 
-  const handleSubmit = (e) => {
+  const { handleForgotPassword } = useAuth();
+  const { loading, error } = useSelector((state) => state.auth);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    console.log({
-      email,
-    });
-
-    // Dummy API Call
-    // axios.post("/api/auth/forgot-password", { email });
+    await handleForgotPassword(email);
   };
 
   return (
@@ -52,13 +51,20 @@ const ForgotPassword = () => {
                 className="ml-3 w-full bg-transparent outline-none"
               />
             </div>
+
+            {error && (
+              <p className="mt-2 text-sm text-red-400">
+                {error}
+              </p>
+            )}
           </div>
 
           <button
             type="submit"
-            className="w-full h-14 rounded-xl bg-violet-600 hover:bg-violet-700 transition font-semibold"
+            disabled={loading}
+            className="w-full h-14 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold"
           >
-            Send Reset Link
+            {loading ? "Sending..." : "Send Reset Link"}
           </button>
         </form>
 

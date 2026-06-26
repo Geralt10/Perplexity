@@ -1,42 +1,91 @@
 import { useState } from "react";
-import { Link } from "react-router";
-
+import { Link, Navigate, useNavigate } from "react-router";
+import { useAuth } from "../hooks/useAuth";
+import { useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
+import { setError } from "../auth.slice";
 
 export default function Register() {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { handleRegister } = useAuth();
+
+  const { user, loading, error } = useSelector((state) => state.auth);
+
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
     confirmPassword: "",
-
   });
 
+  const [validationError, setValidationError] = useState("");
+
   const handleChange = (e) => {
-    const { name, value, type,  } = e.target;
+    const { name, value } = e.target;
+    dispatch(setError(null))
+    setValidationError("");
 
     setFormData((prev) => ({
-    ...prev,
-    [name]: value,
+      ...prev,
+      [name]: value,
     }));
   };
 
-  const handleSubmit = (e) => {
-  e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-  if (formData.password !== formData.confirmPassword) {
-    alert("Passwords do not match!");
-    return;
+    setValidationError("");
+
+    const { username, email, password, confirmPassword } = formData;
+
+    if (!username || !email || !password || !confirmPassword) {
+      setValidationError("All fields are required.");
+      return;
+    }
+
+    const usernameRegex = /^[a-zA-Z][a-zA-Z0-9_]*$/;
+
+    if (!usernameRegex.test(username)) {
+      setValidationError(
+        "Username must start with a letter and can only contain letters, numbers, and underscores."
+      );
+      return;
+    }
+
+    if (password.length < 6) {
+      setValidationError("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setValidationError("Passwords do not match.");
+      return;
+    }
+
+    try {
+      const success = await handleRegister({
+        username,
+        email,
+        password,
+      });
+      console.log(success);
+      if (success) {
+        navigate("/login");
+      }
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  if (!loading && user) {
+    return <Navigate to="/" replace />;
   }
-
-  console.log(formData);
-
-  // API Call
-  // axios.post("/api/register", formData);
-};
 
   return (
     <div className="min-h-screen bg-[#09090B] flex items-center justify-center p-6">
       <div className="w-full max-w-6xl bg-[#18181B] rounded-3xl overflow-hidden shadow-2xl grid lg:grid-cols-2">
+
         {/* Left */}
         <div className="hidden lg:flex flex-col justify-between p-10 bg-gradient-to-b from-[#0F172A] via-[#1E1B4B] to-[#312E81] text-white">
           <div>
@@ -92,9 +141,16 @@ export default function Register() {
         {/* Right */}
         <div className="bg-[#111111] p-8 md:p-12 text-white">
           <h2 className="text-4xl font-bold">Register</h2>
+
           <p className="text-gray-400 mt-2">
             Fill your details to create an account.
           </p>
+
+          {(validationError || error) && (
+            <div className="mt-5 bg-red-500/10 border border-red-500 text-red-400 rounded-xl p-3 text-sm">
+              {validationError || error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             {/* Username */}
@@ -171,22 +227,33 @@ export default function Register() {
               </div>
             </div>
 
-
-            {/* Submit */}
             <button
               type="submit"
-              className="w-full h-14 rounded-xl bg-violet-600 hover:bg-violet-700 transition font-semibold"
+              disabled={loading}
+              className={`w-full h-14 rounded-xl font-semibold transition ${
+                loading
+                  ? "bg-violet-500 opacity-60 cursor-not-allowed"
+                  : "bg-violet-600 hover:bg-violet-700"
+              }`}
             >
-              Create Account
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <i className="ri-loader-4-line animate-spin"></i>
+                  Creating Account...
+                </span>
+              ) : (
+                "Create Account"
+              )}
             </button>
           </form>
 
           <p className="text-center text-gray-400 mt-6">
-            Already have an account?
-            <Link to="/login">
-            <span className="text-violet-400 cursor-pointer hover:underline">
+            Already have an account?{" "}
+            <Link
+              to="/login"
+              className="text-violet-400 hover:underline"
+            >
               Login
-            </span>
             </Link>
           </p>
         </div>

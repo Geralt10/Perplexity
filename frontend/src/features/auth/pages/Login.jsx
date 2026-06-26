@@ -1,7 +1,11 @@
 /** @format */
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, Navigate, useNavigate } from "react-router";
+import { useAuth } from "../hooks/useAuth";
+import { useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
+import { setError } from "../auth.slice";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -10,24 +14,33 @@ const Login = () => {
   });
 
   const navigate = useNavigate();
-
+  const { handleLogin } = useAuth();
+  const dispatch = useDispatch()
+  const { user, loading, error} = useSelector((state) => state.auth);
+  
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
-
+    dispatch(setError(null))
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log(formData);
+    const success = await handleLogin(formData);
 
-    // Example API Call
-    // axios.post("/api/login", formData);
+    if (success) {
+      navigate("/");
+    }
   };
+
+  if (!loading && user) {
+    return <Navigate to='/' replace />;
+  }
 
   return (
     <div className='min-h-screen bg-[#09090B] flex items-center justify-center p-6'>
@@ -82,7 +95,9 @@ const Login = () => {
             <p className='text-gray-400 mt-2'>
               Enter your credentials to access your account.
             </p>
-
+             {error && (
+                    <p className='mt-2 text-sm text-red-400'>{error}</p>
+                  )}
             <form onSubmit={handleSubmit} className='mt-8 space-y-5'>
               {/* Email */}
               <div>
@@ -118,12 +133,15 @@ const Login = () => {
                     className='ml-3 w-full bg-transparent outline-none'
                   />
                 </div>
+                
               </div>
 
               {/* Forgot Password */}
               <div className='flex justify-end'>
                 <button
-                onClick={()=>{navigate("/forgot-password")}}
+                  onClick={() => {
+                    navigate("/forgot-password");
+                  }}
                   type='button'
                   className='text-sm text-violet-400 hover:underline'
                 >
@@ -134,9 +152,10 @@ const Login = () => {
               {/* Submit */}
               <button
                 type='submit'
+                disabled={loading}
                 className='w-full h-14 rounded-xl bg-violet-600 hover:bg-violet-700 transition font-semibold'
               >
-                Login
+                 {loading ? "Logging in..." : "Login"}
               </button>
             </form>
 

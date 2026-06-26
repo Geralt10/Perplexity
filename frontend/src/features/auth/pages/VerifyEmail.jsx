@@ -1,19 +1,18 @@
 
 import { useState } from "react";
 import { Link } from "react-router";
+import { useSelector } from "react-redux";
+import { useAuth } from "../hooks/useAuth";
 
 const VerifyEmail = () => {
   const [email, setEmail] = useState("");
 
-  const handleSubmit = (e) => {
+  const { handleResendVerificationEmail } = useAuth();
+  const { loading, error } = useSelector((state) => state.auth);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    console.log({
-      email,
-    });
-
-    // Dummy API Call
-    // axios.post("/api/auth/resend-verification", { email });
+    await handleResendVerificationEmail(email);
   };
 
   return (
@@ -52,13 +51,20 @@ const VerifyEmail = () => {
                 className="ml-3 w-full bg-transparent outline-none"
               />
             </div>
+
+            {error && (
+              <p className="mt-2 text-sm text-red-400">
+                {error}
+              </p>
+            )}
           </div>
 
           <button
             type="submit"
-            className="w-full h-14 rounded-xl bg-violet-600 hover:bg-violet-700 transition font-semibold"
+            disabled={loading}
+            className="w-full h-14 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold"
           >
-            Send Verification Email
+            {loading ? "Sending..." : "Send Verification Email"}
           </button>
         </form>
 
