@@ -38,3 +38,15 @@ export const loginValidator =[
     validate
 ]
 
+
+export const resetPasswordValidator = [
+  body("password")
+    .trim()
+    .notEmpty()
+    .withMessage("Password is required")
+    .isLength({ min: 6, max: 20 })
+    .withMessage("Password must be between 6 and 20 characters"),
+
+    validate
+];
+

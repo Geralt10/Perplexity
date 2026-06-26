@@ -1,21 +1,24 @@
-
 import { useState } from "react";
 import {
   Link,
+  Navigate,
   useNavigate,
   useSearchParams,
 } from "react-router";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../hooks/useAuth";
+import { setError } from "../auth.slice";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
 
   const token = searchParams.get("token");
 
   const { handleResetPassword } = useAuth();
-  const { loading, error } = useSelector(
+
+  const { loading, error, user } = useSelector(
     (state) => state.auth
   );
 
@@ -24,8 +27,13 @@ const ResetPassword = () => {
     confirmPassword: "",
   });
 
+  const [validationError, setValidationError] = useState("");
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    dispatch(setError(null));
+    setValidationError("");
 
     setFormData((prev) => ({
       ...prev,
@@ -34,21 +42,38 @@ const ResetPassword = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (formData.password !== formData.confirmPassword) {
-    return;
+    dispatch(setError(null));
+    setValidationError("");
+
+    const { password, confirmPassword } = formData;
+
+    if (!password || !confirmPassword) {
+      setValidationError("All fields are required.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setValidationError("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setValidationError("Passwords do not match.");
+      return;
+    }
+
+    const success = await handleResetPassword(token, password);
+
+    if (success) {
+      navigate("/login");
+    }
+  };
+
+  if (!loading && user) {
+    return <Navigate to="/" replace />;
   }
-
-  const success = await handleResetPassword(
-    token,
-    formData.password
-  );
-
-  if (success) {
-    navigate("/login");
-  }
-};
 
   return (
     <div className="min-h-screen bg-[#09090B] flex items-center justify-center p-6">
@@ -109,9 +134,9 @@ const ResetPassword = () => {
             </div>
           </div>
 
-          {error && (
+          {(validationError || error) && (
             <p className="text-sm text-red-400">
-              {error}
+              {validationError || error}
             </p>
           )}
 
@@ -120,9 +145,7 @@ const ResetPassword = () => {
             disabled={loading}
             className="w-full h-14 rounded-xl bg-violet-600 hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold"
           >
-            {loading
-              ? "Resetting..."
-              : "Reset Password"}
+            {loading ? "Resetting..." : "Reset Password"}
           </button>
         </form>
 
@@ -141,4 +164,3 @@ const ResetPassword = () => {
 };
 
 export default ResetPassword;
-

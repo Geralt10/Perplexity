@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, Navigate } from "react-router";
 import { useSelector } from "react-redux";
 import { useAuth } from "../hooks/useAuth";
 
@@ -8,12 +8,15 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState("");
 
   const { handleForgotPassword } = useAuth();
-  const { loading, error } = useSelector((state) => state.auth);
+  const { loading, error,user } = useSelector((state) => state.auth);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     await handleForgotPassword(email);
   };
+  if (!loading && user) {
+    return <Navigate to='/' replace />;
+  }
 
   return (
     <div className="min-h-screen bg-[#09090B] flex items-center justify-center p-6">
