@@ -5,7 +5,6 @@ import userModel from "../models/user.model.js";
 import { senEmail } from "../services/mail.service.js";
 import redisClient from "../config/cache.js";
 
-
 //register
 export async function registerController(req, res, next) {
   const { username, email, password } = req.body;
@@ -23,15 +22,15 @@ export async function registerController(req, res, next) {
   }
 
   if (isUserExists && !isUserExists.verified) {
-       await isUserExists.deleteOne();
-}
+    await isUserExists.deleteOne();
+  }
 
-  const user = (await userModel.create({ 
-    username, 
-    email, 
-    password, 
+  const user = await userModel.create({
+    username,
+    email,
+    password,
     lastVerificationEmailSentAt: new Date(),
-  }));
+  });
 
   const emailVerificationToken = jwt.sign(
     {
@@ -41,7 +40,7 @@ export async function registerController(req, res, next) {
     process.env.JWT_SECRET,
     {
       expiresIn: "1d",
-    },
+    }
   );
 
   const verificationLink = `${process.env.CLIENT_URL}/verify-email?token=${emailVerificationToken}`;
@@ -59,7 +58,7 @@ export async function registerController(req, res, next) {
   `,
   });
 
-   return res.status(201).json({
+  return res.status(201).json({
     message: "user registered successfully",
     success: true,
     user: {
@@ -69,78 +68,74 @@ export async function registerController(req, res, next) {
   });
 }
 
-
 //verification email
 export async function verifyEmailController(req, res) {
   const { token } = req.query;
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-  
 
-  const user = await userModel.findOne({ email: decoded.email });
+    const user = await userModel.findOne({ email: decoded.email });
 
-  if (!user) {
-    return res.status(400).json({
-      message: "invalid token",
-      success: false,
-      err: "user not found",
-    });
-  }
+    if (!user) {
+      return res.status(400).json({
+        message: "invalid token",
+        success: false,
+        err: "user not found",
+      });
+    }
 
-  if (user.verified) {
-  return res.send(
-    `<h1>✅ Email already verified.</h1>
+    if (user.verified) {
+      return res.send(
+        `<h1>✅ Email already verified.</h1>
      <a href="http://localhost:5173/login">
        Go to Login
      </a>
-    `);
-}
+    `
+      );
+    }
 
-  user.verified = true;
+    user.verified = true;
 
-  await user.save();
+    await user.save();
 
-  return res.send(`
+    return res.send(`
       <h1>✅ Email Verified Successfully</h1>
       <p>Your email has been verified.</p>
       <a href="http://localhost:5173/login">
         Go to Login
       </a>
   `);
-  }
-   catch (error) {
+  } catch (error) {
     return res.status(400).json({
-        message:"invalid or expired token",
-        success:false,
-        err:error.message
-    })
+      message: "invalid or expired token",
+      success: false,
+      err: error.message,
+    });
   }
 }
 
-
-
 //resend verification email
-export async function resendVerificationEmail(req,res) {
-    const {email} = req.body;
+export async function resendVerificationEmail(req, res) {
+  const { email } = req.body;
 
-    const user = await userModel.findOne({email});
+  const user = await userModel.findOne({ email });
 
-    if(!user){
-      return res.status(404).json({
-        message:"user not found",
-        success:false
-      })
-    }
+  if (!user) {
+    return res.status(404).json({
+      message: "user not found",
+      success: false,
+    });
+  }
 
-    if(user.verified){
-      return res.status(400).json({
-        success:false,
-        message:"email already verified"
-      })
-    }
+  if (user.verified) {
+    return res.status(400).json({
+      success: false,
+      message: "email already verified",
+    });
+  }
 
-    if (
+  if (
     user.lastVerificationEmailSentAt &&
     Date.now() - user.lastVerificationEmailSentAt.getTime() < 60 * 1000
   ) {
@@ -186,10 +181,7 @@ export async function resendVerificationEmail(req,res) {
     success: true,
     message: "Verification email sent successfully.",
   });
-
-
 }
-
 
 //login
 export async function loginController(req, res) {
@@ -270,106 +262,97 @@ export async function loginController(req, res) {
   });
 }
 
-
-
 // get user detail
-export async function getMeController(req,res) {
-    const userID = req.user.id;
+export async function getMeController(req, res) {
+  const userID = req.user.id;
 
-    const user = await userModel.findById(userID);
+  const user = await userModel.findById(userID);
 
-    if(!user){
-        return res.status(401).json({
-            message:"user not found",
-            success:false,
-            err:"user not found"
-        })
-    }
+  if (!user) {
+    return res.status(401).json({
+      message: "user not found",
+      success: false,
+      err: "user not found",
+    });
+  }
 
-    return res.status(200).json({
-        message:"user data fetched successfully",
-        success:true,
-        user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                verified: user.verified,
-                createdAt: user.createdAt,
-                updatedAt: user.updatedAt,
-              }
-    })
-}
-
-
-
-// refresh
-export async function refreshTokenController(req,res){
-
-  const refreshToken = req.cookies.refreshToken;
-
-  if (!refreshToken) {
-  return res.status(401).json({
-    success: false,
-    message: "No refresh token provided",
+  return res.status(200).json({
+    message: "user data fetched successfully",
+    success: true,
+    user: {
+      id: user._id,
+      username: user.username,
+      email: user.email,
+      verified: user.verified,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    },
   });
 }
 
+// refresh
+export async function refreshTokenController(req, res) {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(401).json({
+      success: false,
+      message: "No refresh token provided",
+    });
+  }
+
   let decoded;
-  
+
   try {
-     decoded = jwt.verify(refreshToken,process.env.REFRESH_TOKEN_SECRET);
+    decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
   } catch (error) {
     return res.status(401).json({
-      message:"invalid  token",
-      success:false,
-      err:error.message
-    })
+      message: "invalid  token",
+      success: false,
+      err: error.message,
+    });
   }
 
   const user = await userModel.findById(decoded.id);
 
-  if(!user){
+  if (!user) {
     return res.status(401).json({
-      message:"invalid or expired token",
-      success:false,
-      err:"user not found"
-    })
+      message: "invalid or expired token",
+      success: false,
+      err: "user not found",
+    });
   }
 
-  const accessToken = jwt.sign({
-    id:user._id,
-    email:user.email
-  },process.env.JWT_SECRET,{expiresIn:'15m'});
+  const accessToken = jwt.sign(
+    {
+      id: user._id,
+      email: user.email,
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "15m" }
+  );
 
-  res.cookie("accessToken",accessToken,{
+  res.cookie("accessToken", accessToken, {
     httpOnly: true,
     secure: false, // production me true kar dena
     sameSite: "lax",
     maxAge: 15 * 60 * 1000,
-  })
+  });
 
   return res.status(200).json({
-    message:"token refreshed",
-    success:true
-  })
-
-
-
+    message: "token refreshed",
+    success: true,
+  });
 }
 
-
 //logout
-export async function logoutController(req,res){
+export async function logoutController(req, res) {
   const accessToken = req.cookies.accessToken;
 
   if (accessToken) {
-    await redisClient.set(
-      `blacklist:${accessToken}`,
-      "true",
-      {
-        EX: 15 * 60, // 15 minutes
-      }
-    );
+    await redisClient.set(`blacklist:${accessToken}`, "true", {
+      EX: 15 * 60, // 15 minutes
+    });
   }
 
   res.clearCookie("accessToken");
@@ -380,7 +363,6 @@ export async function logoutController(req,res){
     message: "Logged out successfully",
   });
 }
-
 
 //forgot password
 
@@ -403,8 +385,7 @@ export async function forgotPasswordController(req, res) {
   ) {
     return res.status(429).json({
       success: false,
-      message:
-        "Please wait 1 minute before requesting another password reset email.",
+      message: "Please wait 1 minute before requesting another password reset email.",
     });
   }
 
@@ -446,9 +427,6 @@ export async function forgotPasswordController(req, res) {
     message: "Password reset email sent successfully.",
   });
 }
-
-
-
 
 //reset password
 export async function resetPasswordController(req, res) {

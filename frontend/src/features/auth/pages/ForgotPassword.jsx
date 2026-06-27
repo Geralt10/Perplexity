@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, Navigate } from "react-router";
 import { useSelector } from "react-redux";
@@ -8,14 +7,14 @@ const ForgotPassword = () => {
   const [email, setEmail] = useState("");
 
   const { handleForgotPassword } = useAuth();
-  const { loading, error,user } = useSelector((state) => state.auth);
+  const { loading, error, user } = useSelector((state) => state.auth);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     await handleForgotPassword(email);
   };
   if (!loading && user) {
-    return <Navigate to='/' replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (
@@ -27,20 +26,15 @@ const ForgotPassword = () => {
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold text-center">
-          Forgot Password
-        </h1>
+        <h1 className="text-3xl font-bold text-center">Forgot Password</h1>
 
         <p className="text-center text-gray-400 mt-3">
-          Enter your registered email address and we'll send you a password
-          reset link.
+          Enter your registered email address and we'll send you a password reset link.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div>
-            <label className="block text-sm mb-2">
-              Email Address
-            </label>
+            <label className="block text-sm mb-2">Email Address</label>
 
             <div className="flex items-center bg-[#1F1F23] border border-gray-700 rounded-xl px-4 h-14">
               <i className="ri-mail-line text-gray-400"></i>
@@ -55,11 +49,7 @@ const ForgotPassword = () => {
               />
             </div>
 
-            {error && (
-              <p className="mt-2 text-sm text-red-400">
-                {error}
-              </p>
-            )}
+            {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
           </div>
 
           <button
@@ -73,10 +63,7 @@ const ForgotPassword = () => {
 
         <p className="text-center text-gray-400 mt-6">
           Remember your password?{" "}
-          <Link
-            to="/login"
-            className="text-violet-400 hover:underline"
-          >
+          <Link to="/login" className="text-violet-400 hover:underline">
             Back to Login
           </Link>
         </p>
@@ -86,4 +73,3 @@ const ForgotPassword = () => {
 };
 
 export default ForgotPassword;
-

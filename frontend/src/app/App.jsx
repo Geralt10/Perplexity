@@ -1,20 +1,14 @@
-import React, { useEffect } from 'react'
-import { RouterProvider } from 'react-router'
-import { router } from './app.routes'
-import {Toaster} from "react-hot-toast"
-import { useAuth } from '../features/auth/hooks/useAuth';
-
-
-
-
+import React, { useEffect } from "react";
+import { RouterProvider } from "react-router";
+import { router } from "./app.routes";
+import { Toaster } from "react-hot-toast";
+import { useAuth } from "../features/auth/hooks/useAuth";
 
 const App = () => {
-    const {handleGetMe}=useAuth()
-    useEffect(() => {
-    
-      handleGetMe();
-  
-    }, []);
+  const { handleGetMe } = useAuth();
+  useEffect(() => {
+    handleGetMe();
+  }, []);
 
   return (
     <>
@@ -24,4 +18,4 @@ const App = () => {
   );
 };
 
-export default App
+export default App;

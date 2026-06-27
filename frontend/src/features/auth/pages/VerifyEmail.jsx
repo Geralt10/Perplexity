@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router";
 import { useSelector } from "react-redux";
@@ -8,7 +7,7 @@ const VerifyEmail = () => {
   const [email, setEmail] = useState("");
 
   const { handleResendVerificationEmail } = useAuth();
-  const { loading, error,user } = useSelector((state) => state.auth);
+  const { loading, error, user } = useSelector((state) => state.auth);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -16,7 +15,7 @@ const VerifyEmail = () => {
   };
 
   if (!loading && user) {
-    return <Navigate to='/' replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (
@@ -28,20 +27,15 @@ const VerifyEmail = () => {
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold text-center">
-          Verify Your Email
-        </h1>
+        <h1 className="text-3xl font-bold text-center">Verify Your Email</h1>
 
         <p className="text-center text-gray-400 mt-3">
-          Enter your registered email address and we'll send you a new
-          verification link.
+          Enter your registered email address and we'll send you a new verification link.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div>
-            <label className="block text-sm mb-2">
-              Email Address
-            </label>
+            <label className="block text-sm mb-2">Email Address</label>
 
             <div className="flex items-center bg-[#1F1F23] border border-gray-700 rounded-xl px-4 h-14">
               <i className="ri-mail-line text-gray-400"></i>
@@ -56,11 +50,7 @@ const VerifyEmail = () => {
               />
             </div>
 
-            {error && (
-              <p className="mt-2 text-sm text-red-400">
-                {error}
-              </p>
-            )}
+            {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
           </div>
 
           <button
@@ -74,10 +64,7 @@ const VerifyEmail = () => {
 
         <p className="text-center text-gray-400 mt-6">
           Already verified?{" "}
-          <Link
-            to="/login"
-            className="text-violet-400 hover:underline"
-          >
+          <Link to="/login" className="text-violet-400 hover:underline">
             Go to Login
           </Link>
         </p>
@@ -87,4 +74,3 @@ const VerifyEmail = () => {
 };
 
 export default VerifyEmail;
-

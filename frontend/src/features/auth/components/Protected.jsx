@@ -4,11 +4,7 @@ import { useSelector } from "react-redux";
 import LoadingSpinner from "./LoadingSpinner";
 
 const Protected = ({ children }) => {
-  
-
-  const { user, loading } = useSelector(
-    (state) => state.auth
-  );
+  const { user, loading } = useSelector((state) => state.auth);
 
   // Jab tak auth check complete na ho
   if (loading) {

@@ -1,4 +1,3 @@
-
 import jwt from "jsonwebtoken";
 import redisClient from "../config/cache.js";
 
@@ -13,10 +12,7 @@ async function identifyUser(req, res, next) {
     });
   }
 
-  
-  const isBlacklisted = await redisClient.get(
-    `blacklist:${accessToken}`
-  );
+  const isBlacklisted = await redisClient.get(`blacklist:${accessToken}`);
 
   if (isBlacklisted) {
     return res.status(401).json({
@@ -26,10 +22,7 @@ async function identifyUser(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(
-      accessToken,
-      process.env.JWT_SECRET
-    );
+    const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
 
     req.user = decoded;
 
@@ -44,4 +37,3 @@ async function identifyUser(req, res, next) {
 }
 
 export default identifyUser;
-

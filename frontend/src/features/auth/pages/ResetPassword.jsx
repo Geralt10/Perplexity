@@ -1,10 +1,5 @@
 import { useState } from "react";
-import {
-  Link,
-  Navigate,
-  useNavigate,
-  useSearchParams,
-} from "react-router";
+import { Link, Navigate, useNavigate, useSearchParams } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../hooks/useAuth";
 import { setError } from "../auth.slice";
@@ -18,9 +13,7 @@ const ResetPassword = () => {
 
   const { handleResetPassword } = useAuth();
 
-  const { loading, error, user } = useSelector(
-    (state) => state.auth
-  );
+  const { loading, error, user } = useSelector((state) => state.auth);
 
   const [formData, setFormData] = useState({
     password: "",
@@ -84,22 +77,15 @@ const ResetPassword = () => {
           </div>
         </div>
 
-        <h1 className="text-3xl font-bold text-center">
-          Reset Password
-        </h1>
+        <h1 className="text-3xl font-bold text-center">Reset Password</h1>
 
         <p className="text-center text-gray-400 mt-3">
           Enter your new password below to secure your account.
         </p>
 
-        <form
-          onSubmit={handleSubmit}
-          className="mt-8 space-y-5"
-        >
+        <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           <div>
-            <label className="block text-sm mb-2">
-              New Password
-            </label>
+            <label className="block text-sm mb-2">New Password</label>
 
             <div className="flex items-center bg-[#1F1F23] border border-gray-700 rounded-xl px-4 h-14">
               <i className="ri-lock-line text-gray-400"></i>
@@ -116,9 +102,7 @@ const ResetPassword = () => {
           </div>
 
           <div>
-            <label className="block text-sm mb-2">
-              Confirm Password
-            </label>
+            <label className="block text-sm mb-2">Confirm Password</label>
 
             <div className="flex items-center bg-[#1F1F23] border border-gray-700 rounded-xl px-4 h-14">
               <i className="ri-lock-line text-gray-400"></i>
@@ -135,9 +119,7 @@ const ResetPassword = () => {
           </div>
 
           {(validationError || error) && (
-            <p className="text-sm text-red-400">
-              {validationError || error}
-            </p>
+            <p className="text-sm text-red-400">{validationError || error}</p>
           )}
 
           <button
@@ -151,10 +133,7 @@ const ResetPassword = () => {
 
         <p className="text-center text-gray-400 mt-6">
           Remembered your password?{" "}
-          <Link
-            to="/login"
-            className="text-violet-400 hover:underline"
-          >
+          <Link to="/login" className="text-violet-400 hover:underline">
             Back to Login
           </Link>
         </p>

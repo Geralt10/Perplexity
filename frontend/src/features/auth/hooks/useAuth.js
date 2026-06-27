@@ -1,5 +1,3 @@
-
-
 import { useDispatch } from "react-redux";
 import {
   register,
@@ -22,13 +20,11 @@ export function useAuth() {
       dispatch(setLoading(true));
       const data = await register({ username, email, password });
       toast.success(
-        "Account created successfully, we have sent you an email please verify your email!",
+        "Account created successfully, we have sent you an email please verify your email!"
       );
-      return data.success
+      return data.success;
     } catch (error) {
-      dispatch(
-        setError(error.response?.data?.message || "registration failed"),
-      );
+      dispatch(setError(error.response?.data?.message || "registration failed"));
     } finally {
       dispatch(setLoading(false));
     }
@@ -40,37 +36,32 @@ export function useAuth() {
       const data = await login({ email, password });
       dispatch(setUser(data.user));
       toast.success("Login successful!");
-      return data.success
+      return data.success;
     } catch (error) {
       dispatch(setError(error.response?.data?.message || "login failed"));
     } finally {
       dispatch(setLoading(false));
-      
     }
   }
 
   async function handleGetMe() {
-  console.log("handleGetMe called");
+    console.log("handleGetMe called");
 
-  try {
-    dispatch(setLoading(true));
+    try {
+      dispatch(setLoading(true));
 
-    const data = await getMe();
-    console.log("getMe response:", data);
+      const data = await getMe();
+      console.log("getMe response:", data);
 
-    dispatch(setUser(data.user));
-  } catch (error) {
-    console.log("getMe error:", error.response?.status, error.response?.data);
+      dispatch(setUser(data.user));
+    } catch (error) {
+      console.log("getMe error:", error.response?.status, error.response?.data);
 
-    dispatch(
-      setError(
-        error.response?.data?.message || "Failed to fetch data"
-      )
-    );
-  } finally {
-    dispatch(setLoading(false));
+      dispatch(setError(error.response?.data?.message || "Failed to fetch data"));
+    } finally {
+      dispatch(setLoading(false));
+    }
   }
-}
 
   async function handleLogout() {
     try {
@@ -90,12 +81,7 @@ export function useAuth() {
       const data = await resendVerificationEmail({ email });
       toast.success("Verification email sent!");
     } catch (error) {
-      dispatch(
-        setError(
-          error.response?.data?.message ||
-            "Failed to resend verification email",
-        ),
-      );
+      dispatch(setError(error.response?.data?.message || "Failed to resend verification email"));
     } finally {
       dispatch(setLoading(false));
     }
@@ -106,9 +92,7 @@ export function useAuth() {
       await forgotPassword({ email });
       toast.success("Password reset link sent!");
     } catch (error) {
-      dispatch(
-        setError(error.response?.data?.message || "Forgot password failed"),
-      );
+      dispatch(setError(error.response?.data?.message || "Forgot password failed"));
     } finally {
       dispatch(setLoading(false));
     }
@@ -119,12 +103,10 @@ export function useAuth() {
       dispatch(setLoading(true));
       await resetPassword({ token, password });
       toast.success("Password reset successfully!");
-      return true
+      return true;
     } catch (error) {
-      dispatch(
-        setError(error.response?.data?.message || "Password reset failed"),
-      );
-      return false
+      dispatch(setError(error.response?.data?.message || "Password reset failed"));
+      return false;
     } finally {
       dispatch(setLoading(false));
     }
